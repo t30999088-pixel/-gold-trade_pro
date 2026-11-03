@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gold Trader Pro</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101916;color:#f1f2ec;font-family:Tahoma,Arial}
+main{max-width:850px;margin:auto;padding:20px}
+header{padding:20px 0;border-bottom:1px solid #45564b}
+h1{color:#d5ad60;font-size:23px}
+.card{background:#1c2923;border:1px solid #405247;border-radius:15px;padding:18px;margin:15px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.value{font-size:22px;color:#e4bd70;margin-top:12px}
+label{display:block;margin:12px 0 7px;color:#bdc8bf}
+input{width:100%;padding:13px;border-radius:9px;border:1px solid #52665a;background:#101916;color:white;font-size:16px}
+button{padding:13px;border:0;border-radius:9px;font-weight:bold;cursor:pointer;margin:5px 0}
+.primary{background:#d5ad60;color:#17140d;width:100%}
+.buy{background:#218b60;color:white;width:48%}
+.sell{background:#b84e49;color:white;width:48%}
+small{color:#aab6ad}
+@media(max-width:480px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>GOLD TRADER PRO</h1>
+<small>سامانه شخصی تحلیل و معاملات آزمایشی طلا</small>
+</header>
+
+<div class="grid">
+<section class="card">
+<small>قیمت هر گرم طلای ۱۸ عیار</small>
+<div class="value" id="priceView">ثبت نشده</div>
+</section>
+<section class="card">
+<small>موجودی آزمایشی</small>
+<div class="value" id="cashView">۱۰۰٬۰۰۰٬۰۰۰ تومان</div>
+</section>
+</div>
+
+<section class="card">
+<h3>ثبت قیمت بازار</h3>
+<label>قیمت هر گرم طلا (تومان)</label>
+<input id="price" type="number" placeholder="مثلاً ۷۰۰۰۰۰۰">
+<button class="primary" onclick="savePrice()">ثبت قیمت</button>
+</section>
+
+<section class="card">
+<h3>معاملات مجازی</h3>
+<label>مقدار طلا (گرم)</label>
+<input id="grams" type="number" min="0.001" step="0.001" value="1">
+<p>
+<button class="buy" onclick="trade('buy')">خرید مجازی</button>
+<button class="sell" onclick="trade('sell')">فروش مجازی</button>
+</p>
+<div id="message"><small>برای شروع قیمت طلا را ثبت کن.</small></div>
+</section>
+
+<section class="card">
+<h3>دارایی و تاریخچه</h3>
+<p>مقدار طلای شما: <b id="goldView">۰ گرم</b></p>
+<div id="history"><small>هنوز معامله‌ای ثبت نشده است.</small></div>
+</section>
+</main>
+
+<script>
+const initial={
+ cash:100000000,
+ gold:0,
+ price:0,
+ history:[]
+};
+let data;
+try{
+ data=JSON.parse(localStorage.getItem("goldTraderData"))||initial;
+}catch(e){data=initial}
+
+function save(){
+ localStorage.setItem("goldTraderData",JSON.stringify(data));
+ render();
+}
+function money(n){return Math.round(n).toLocaleString("fa-IR")}
+function render(){
+ document.getElementById("priceView").textContent=data.price?money(data.price)+" تومان":"ثبت نشده";
+ document.getElementById("cashView").textContent=money(data.cash)+" تومان";
+ document.getElementById("goldView").textContent=data.gold.toLocaleString("fa-IR")+" گرم";
+ document.getElementById("history").innerHTML=data.history.length?
+ data.history.slice().reverse().map(x=>`<p>${x.type} | ${x.grams} گرم | ${money(x.price)} تومان</p>`).join(""):"<small>هنوز معامله‌ای ثبت نشده است.</small>";
+}
+function savePrice(){
+ let p=Number(document.getElementById("price").value);
+ if(p<=0){msg("قیمت معتبر وارد کن.");return}
+ data.price=p;save();msg("قیمت ثبت شد.");
+}
+function trade(type){
+ let g=Number(document.getElementById("grams").value);
+ let cost=data.price*g;
+ if(!data.price||g<=0){msg("قیمت و مقدار معتبر وارد کن.");return}
+ if(type==="buy"){
+  if(cost*1.001>data.cash){msg("موجودی کافی نیست.");return}
+  data.cash-=cost*1.001;
+  data.gold+=g;
+ }else{
+  if(g>data.gold){msg("طلای آزمایشی کافی نیست.");return}
+  data.gold-=g;
+  data.cash+=cost*.999;
+ }
+ data.history.push({type:type==="buy"?"خرید":"فروش",grams:g,price:data.price});
+ save();msg("معامله مجازی ثبت شد.");
+}
+function msg(t){document.getElementById("message").textContent=t}
+render();
+</script>
+</body>
+</html>
